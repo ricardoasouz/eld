@@ -1,0 +1,193 @@
+#---map-flags.test---------------------- Executable --------------------#
+#BEGIN_COMMENT
+# Check that ARM input e_flags are shown in map-file LOAD records.
+#
+# The same flag bits have different ABI meanings before EABI5 and in EABI5:
+# EF_ARM_SOFT_FLOAT / EF_ARM_ABI_FLOAT_SOFT use bit 0x200, while
+# EF_ARM_VFP_FLOAT / EF_ARM_ABI_FLOAT_HARD use bit 0x400.
+#END_COMMENT
+#START_TEST
+#RUN: %yaml2obj --docnum=1 %s -o %t.unknown.o
+#RUN: %yaml2obj --docnum=2 %s -o %t.eabi4soft.o
+#RUN: %yaml2obj --docnum=3 %s -o %t.eabi4vfp.o
+#RUN: %yaml2obj --docnum=4 %s -o %t.eabi5.o
+#RUN: %yaml2obj --docnum=5 %s -o %t.eabi5soft.o
+#RUN: %yaml2obj --docnum=6 %s -o %t.eabi5hard.o
+#RUN: %yaml2obj --docnum=7 %s -o %t.eabi5be8.o
+#RUN: %yaml2obj --docnum=8 %s -o %t.eabi5hardbe8.o
+#
+# Check the regular map-file representation.
+#RUN: %link %emulation --no-warn-mismatch -Map %t.map \
+#RUN:   %t.eabi4soft.o %t.eabi4vfp.o %t.eabi5.o \
+#RUN:   %t.eabi5soft.o %t.eabi5hard.o %t.eabi5be8.o \
+#RUN:   %t.eabi5hardbe8.o \
+#RUN:   -o %t.out
+#RUN: %filecheck %s --check-prefix=MAP < %t.map
+#
+# Check the YAML map representation as well.
+#RUN: %link %emulation --no-warn-mismatch -MapStyle yaml -Map %t.yaml.map \
+#RUN:   %t.eabi4soft.o %t.eabi4vfp.o %t.eabi5.o \
+#RUN:   %t.eabi5soft.o %t.eabi5hard.o %t.eabi5be8.o \
+#RUN:   %t.eabi5hardbe8.o \
+#RUN:   -o %t.yaml.out
+#RUN: %filecheck %s --check-prefix=MAP < %t.yaml.map
+#
+# EABI_UNKNOWN has no additional flag text and preserves the historic [arm]
+# representation.
+#RUN: %link %emulation -Map %t.unknown.map %t.unknown.o -o %t.unknown.out
+#RUN: %filecheck %s --check-prefix=UNKNOWN < %t.unknown.map
+#END_TEST
+#
+#MAP: LOAD {{.*}}eabi4soft.o[arm|EABI4|SoftFloat]
+#MAP: LOAD {{.*}}eabi4vfp.o[arm|EABI4|VFPFloat]
+#MAP: LOAD {{.*}}eabi5.o[arm|EABI5]
+#MAP: LOAD {{.*}}eabi5soft.o[arm|EABI5|FloatABISoft]
+#MAP: LOAD {{.*}}eabi5hard.o[arm|EABI5|FloatABIHard]
+#MAP: LOAD {{.*}}eabi5be8.o[arm|EABI5|BE8]
+#MAP: LOAD {{.*}}eabi5hardbe8.o[arm|EABI5|FloatABIHard|BE8]
+#
+#UNKNOWN: LOAD {{.*}}unknown.o[arm]
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_UNKNOWN ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            unknown
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER4, EF_ARM_SOFT_FLOAT ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi4soft
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER4, EF_ARM_VFP_FLOAT ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi4vfp
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER5 ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi5
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER5, EF_ARM_SOFT_FLOAT ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi5soft
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER5, EF_ARM_VFP_FLOAT ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi5hard
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER5, EF_ARM_BE8 ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi5be8
+    Section:         .text
+    Binding:         STB_GLOBAL
+
+--- !ELF
+FileHeader:
+  Class:           ELFCLASS32
+  Data:            ELFDATA2LSB
+  Type:            ET_REL
+  Machine:         EM_ARM
+  Flags:           [ EF_ARM_EABI_VER5, EF_ARM_VFP_FLOAT, EF_ARM_BE8 ]
+Sections:
+  - Name:            .text
+    Type:            SHT_PROGBITS
+    Flags:           [ SHF_ALLOC, SHF_EXECINSTR ]
+    AddressAlign:    4
+    Content:         1EFF2FE1
+Symbols:
+  - Name:            eabi5hardbe8
+    Section:         .text
+    Binding:         STB_GLOBAL

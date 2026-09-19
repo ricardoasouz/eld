@@ -92,7 +92,31 @@ bool ARMInfo::InitializeDefaultMappings(Module &pModule) {
   return true;
 }
 
-std::string ARMInfo::flagString(uint64_t flag) const { return "arm"; }
+std::string ARMInfo::flagString(uint64_t Flag) const {
+  std::string FlagStr = "arm";
+
+  auto AppendFlag = [&FlagStr](const std::string &Name) {
+    FlagStr += "|";
+    FlagStr += Name;
+  };
+
+  const uint64_t EABIVersion = getEABIVersion(Flag);
+  if (EABIVersion != llvm::ELF::EF_ARM_EABI_UNKNOWN)
+    AppendFlag("EABI" + std::to_string(EABIVersion >> 24));
+
+  if (Flag & llvm::ELF::EF_ARM_SOFT_FLOAT)
+    AppendFlag(EABIVersion == llvm::ELF::EF_ARM_EABI_VER5 ? "FloatABISoft"
+                                                          : "SoftFloat");
+
+  if (Flag & llvm::ELF::EF_ARM_VFP_FLOAT)
+    AppendFlag(EABIVersion == llvm::ELF::EF_ARM_EABI_VER5 ? "FloatABIHard"
+                                                          : "VFPFloat");
+
+  if (Flag & llvm::ELF::EF_ARM_BE8)
+    AppendFlag("BE8");
+
+  return FlagStr;
+}
 
 uint64_t ARMInfo::flags() const {
   // checkFlags() was never called. This means the linker was given a lone empty
