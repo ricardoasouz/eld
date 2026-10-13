@@ -2,6 +2,8 @@ name: Windows Arm64/x86_64 CI/Nightly
 # owner: Steven6798
 
 on:
+  push:
+    branches: [ci/2145-win-mac]
   # pull_request: {} # Uncomment to run in CI mode to build ELD PR branch.
   schedule:
     # 9:00 PM Central

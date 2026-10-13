@@ -4,6 +4,8 @@ name: macOS Nightly
 # GitHub-hosted Darwin host build of ld.eld (ELF linker, not a Mach-O target).
 
 on:
+  push:
+    branches: [ci/2145-win-mac]
   schedule:
     # 9:00 PM Central
     - cron: '0 2 * * *'
