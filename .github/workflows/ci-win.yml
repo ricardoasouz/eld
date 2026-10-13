@@ -13,7 +13,7 @@ permissions:
   contents: write
 jobs:
   build-windows:
-    if: github.repository == 'qualcomm/eld'
+    if: true
     permissions:
       contents: write
     env:

@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-macos:
-    if: github.repository == 'qualcomm/eld'
+    if: true
     name: macOS
     runs-on: macos-latest
     timeout-minutes: 180
